@@ -1,31 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clean WebXR Room</title>
-  <style>
-    body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
-    #app { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Clean WebXR Room</title>
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+        #app, #midas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; }
 
-    /* Pretty Dropdown UI */
-    #ui-panel {
-      position: absolute; top: 20px; left: 20px; z-index: 10;
-      background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-      padding: 15px; border-radius: 10px; color: white; border: 1px solid rgba(255,255,255,0.2);
-    }
-    #ui-panel select {
-      background: #222; color: white; border: 1px solid #555; padding: 5px 10px; border-radius: 5px;
-    }
-  </style>
+        /* Hide the MiDaS container by default */
+        #midas-container { display: none; z-index: 5; background-color: #111; }
+
+        /* Top Navigation Bar */
+        #nav-bar {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 15;
+            display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-btn {
+            background: #333; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: 0.2s;
+        }
+        .nav-btn.active { background: #4CAF50; }
+        .nav-btn:hover:not(.active) { background: #555; }
+
+        /* The original dropdown UI (moved slightly down so it doesn't overlap) */
+        #ui-panel {
+            position: absolute; top: 80px; left: 20px; z-index: 10;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            padding: 15px; border-radius: 10px; color: white; border: 1px solid rgba(255,255,255,0.2);
+        }
+        #ui-panel select { background: #222; color: white; border: 1px solid #555; padding: 5px 10px; border-radius: 5px; }
+
+        /* MiDaS Upload UI */
+        #upload-panel {
+            position: absolute; top: 80px; left: 20px; z-index: 10; display: none;
+            background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            padding: 15px; border-radius: 10px; color: white; border: 1px solid rgba(255,255,255,0.2);
+        }
+    </style>
 </head>
 <body>
-<div id="app"></div>
 
+<div id="nav-bar">
+    <button id="btn-3dgs" class="nav-btn active">Virtual Room (3DGS)</button>
+    <button id="btn-midas" class="nav-btn">Magic Photo (MiDaS)</button>
+</div>
+
+<div id="app"></div>
 <div id="ui-panel">
-  <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 5px;">CURRENT ENVIRONMENT:</label>
-  <select id="model-select"></select>
-  <div id="loading-text" style="font-size: 12px; color: #aaa; margin-top: 5px;"></div>
+    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 5px;">CURRENT ENVIRONMENT:</label>
+    <select id="model-select"></select>
+    <div id="loading-text" style="font-size: 12px; color: #aaa; margin-top: 5px;"></div>
+</div>
+
+<div id="midas-container"></div>
+<div id="upload-panel">
+    <label style="font-size: 12px; font-weight: bold; display: block; margin-bottom: 5px;">UPLOAD 2D PHOTO:</label>
+    <input type="file" id="image-upload" accept="image/png, image/jpeg" style="color: white; font-size: 12px; margin-bottom: 15px;" />
+
+    <button id="btn-toggle-depth" style="display: none; background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">
+        🔍 View Depth Map
+    </button>
 </div>
 
 <script type="module" src="/src/main.ts"></script>

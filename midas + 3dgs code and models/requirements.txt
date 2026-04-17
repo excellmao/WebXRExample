@@ -1,6 +1,0 @@
-opencv-contrib-python
-torch
-torchvision
-numpy
-matplotlib
-timm
