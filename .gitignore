@@ -1,0 +1,39 @@
+# ─── MASSIVE 3D & AI ASSETS ───────────────────────────────────────────────
+# Ignore all Gaussian Splat point clouds
+*.ply
+# Ignore downloaded Tripo3D models
+*.glb
+*.gltf
+*.obj
+# Ignore MiDaS depth map outputs (optional, remove if you want to save them)
+output.png
+depth_map*.jpg
+
+# ─── VITE & NODE.JS ───────────────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ─── PYTHON & VIRTUAL ENVIRONMENTS ────────────────────────────────────────
+__pycache__/
+venv/
+env/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ─── SECRETS & KEYS ───────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── WEBSTORM & IDE SETTINGS ──────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── OS JUNK (Just in case you share with Windows/Mac users) ──────────────
+.DS_Store
+Thumbs.db
