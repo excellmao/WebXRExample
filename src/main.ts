@@ -1,5 +1,6 @@
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // ─── 1. INITIALIZE VIEWER ──────────────────────────────────────────────────
 const viewer = new GaussianSplats3D.Viewer({
@@ -25,6 +26,14 @@ const internalScene = viewer.scene || viewer.threeScene;
 
 // Set the rotation order so mouse look doesn't flip upside down
 viewer.camera.rotation.order = 'YXZ';
+
+// 1. Soft, universal Ambient Light (lights up the dark areas evenly)
+const gsAmbientLight = new THREE.AmbientLight(0xffffff, 1.0);
+internalScene.add(gsAmbientLight);
+
+const gsSunLight = new THREE.DirectionalLight(0xffffff, 1.5);
+gsSunLight.position.set(5, 10, 7);
+internalScene.add(gsSunLight);
 
 // ─── 3. WASD & MOUSE LOOK CONTROLS ─────────────────────────────────────────
 const keys: Record<string, boolean> = {};
@@ -159,7 +168,7 @@ btn3DGS.addEventListener('click', () => {
     uiPanel.style.display = 'block';
     midasContainer.style.display = 'none';
     uploadPanel.style.display = 'none';
-
+    document.getElementById('ai-spawn-panel')!.style.display = 'flex';
     // Resume splat rendering
     // Note: Your WebXR button might need to be repositioned or toggled here later
 });
@@ -174,6 +183,7 @@ btnMidas.addEventListener('click', () => {
     uiPanel.style.display = 'none';
     midasContainer.style.display = 'block';
     uploadPanel.style.display = 'block';
+    document.getElementById('ai-spawn-panel')!.style.display = 'none';
 });
 
 // ─── 6. MIDAS 2.5D HOLOGRAPHIC VIEWER ──────────────────────────────────────
@@ -337,4 +347,80 @@ window.addEventListener('resize', () => {
     // Also update 3DGS camera
     viewer.camera.aspect = window.innerWidth / window.innerHeight;
     viewer.camera.updateProjectionMatrix();
+});
+
+// --- Text-to-3D Spawning Logic ---
+const aiPromptInput = document.getElementById('ai-prompt-input') as HTMLInputElement;
+const btnSpawnAi = document.getElementById('btn-spawn-ai') as HTMLButtonElement;
+const gltfLoader = new GLTFLoader();
+
+btnSpawnAi.addEventListener('click', async () => {
+    const prompt = aiPromptInput.value.trim();
+    if (!prompt) return;
+
+    // UI Feedback
+    const originalText = btnSpawnAi.innerText;
+    btnSpawnAi.innerText = "⏳ Generating 3D...";
+    btnSpawnAi.disabled = true;
+    btnSpawnAi.style.background = "#555";
+
+    try {
+        // 1. Ask Python to generate the model
+        const response = await fetch('http://127.0.0.1:5000/api/text-to-3d', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+
+        if (!response.ok) throw new Error("Backend failed to generate model");
+
+        // 2. Receive the .glb file as a blob
+        const modelBlob = await response.blob();
+        const modelUrl = URL.createObjectURL(modelBlob);
+
+        // 3. Load the model into Three.js
+        gltfLoader.load(modelUrl, (gltf) => {
+            const model = gltf.scene;
+
+            // 🌟 THE MATH: Calculate exactly 2 meters in front of the camera
+            const spawnDistance = 2.0;
+            const cameraDirection = new THREE.Vector3();
+            viewer.camera.getWorldDirection(cameraDirection);
+
+            // Start at camera position, move forward by 'spawnDistance'
+            const spawnPos = new THREE.Vector3()
+                .copy(viewer.camera.position)
+                .add(cameraDirection.multiplyScalar(spawnDistance));
+
+            // Set Position and make it face the camera
+            model.position.copy(spawnPos);
+            model.lookAt(viewer.camera.position);
+
+            // Scale it down (AI models are often massive)
+            model.scale.set(0.5, 0.5, 0.5);
+
+            // Inject it into the Gaussian Splat scene!
+            internalScene.add(model);
+
+            // Reset UI
+            btnSpawnAi.innerText = "✅ Spawned!";
+            btnSpawnAi.style.background = "#4CAF50";
+            setTimeout(() => {
+                btnSpawnAi.innerText = originalText;
+                btnSpawnAi.disabled = false;
+                btnSpawnAi.style.background = "#E91E63";
+                aiPromptInput.value = "";
+            }, 2000);
+        });
+
+    } catch (error) {
+        console.error(error);
+        btnSpawnAi.innerText = "❌ Error";
+        btnSpawnAi.style.background = "#FF4444";
+        setTimeout(() => {
+            btnSpawnAi.innerText = originalText;
+            btnSpawnAi.disabled = false;
+            btnSpawnAi.style.background = "#E91E63";
+        }, 2000);
+    }
 });
